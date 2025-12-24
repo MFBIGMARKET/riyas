@@ -806,20 +806,67 @@
             const logoBase64 = localStorage.getItem('pvr_logo');
             if(logoPreviewImg) logoPreviewImg.src = logoBase64 || "";
         };
+        // --- RESTORED FUNCTION ---
+    function initializeAppData() {
+        loadLogo();
+        renderCustomers(); 
+        renderInventory();
+        renderVendors();
+        renderAccounts();
+        initHeaderMenus(); 
+        
+        // Setup Search Listeners
+        if(salesSearchBar) salesSearchBar.addEventListener('input', (e) => renderSalesProductGrid(e.target.value));
+        if(purchaseSearchBar) purchaseSearchBar.addEventListener('input', (e) => renderPurchaseProductGrid(e.target.value));
+        if(quoteSearchBar) quoteSearchBar.addEventListener('input', (e) => renderQuotationProductGrid(e.target.value));
+        
+        const custSearch = document.getElementById('customer-search-bar');
+        if(custSearch) custSearch.addEventListener('input', (e) => filterList('#customer-list .list-item', e.target.value));
+        
+        const invSearch = document.getElementById('inventory-search-bar');
+        if(invSearch) invSearch.addEventListener('input', (e) => filterList('#inventory-list .list-item', e.target.value));
+        
+        const vendSearch = document.getElementById('vendor-search-bar');
+        if(vendSearch) vendSearch.addEventListener('input', (e) => filterList('#vendor-list .list-item', e.target.value));
+
+        // Expense Date Setup
+        const expenseDateInput = document.getElementById('expense-date');
+        const expenseDateDisplay = document.getElementById('expense-date-display');
+        if(expenseDateInput) {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            expenseDateInput.value = `${year}-${month}-${day}`;
+            if(expenseDateDisplay) expenseDateDisplay.textContent = `${day}/${month}/${year}`;
+            
+            expenseDateInput.addEventListener('input', () => {
+                if (expenseDateInput.value) {
+                    const [y, m, d] = expenseDateInput.value.split('-');
+                    expenseDateDisplay.textContent = `${d}/${m}/${y}`;
+                }
+            });
+        }
+        
+        navigateToPage('customers-page');
+    }
 
         const getData = async (collectionName) => {
-            try {
-                const querySnapshot = await db.collection(collectionName).where("userId", "==", SHARED_USER_ID).get();
-                const data = [];
-                querySnapshot.forEach(doc => {
-                    data.push({ id: doc.id, ...doc.data() });
-                });
-                return data;
-            } catch (error) {
-                console.error(`Error getting documents from ${collectionName}:`, error);
-                return [];
-            }
-        };
+    try {
+        // REMOVE: .where("userId", "==", SHARED_USER_ID)
+        // USE THIS INSTEAD:
+        const querySnapshot = await db.collection(collectionName).get();
+        
+        const data = [];
+        querySnapshot.forEach(doc => {
+            data.push({ id: doc.id, ...doc.data() });
+        });
+        return data;
+    } catch (error) {
+        console.error(`Error getting documents from ${collectionName}:`, error);
+        return [];
+    }
+};
         
         const getNextDocId = async (type) => {
             const counterRef = db.collection("counters").doc("doc_counters");
